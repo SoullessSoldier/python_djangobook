@@ -40,27 +40,27 @@ $ python manage.py runserver
 
 ---
 
-* filtering  \
+* *filtering*  \
 GET /api/v1/first5/?year_min=2019&year_max=2021 \
 GET /api/v1/first5/?rubrics=%D0%90%D1%83%D0%B4&title=&year_min=&year_max=
 
 ////
 // Frontend's links
 ////
-* get last 5 dates or 5 dates before <user_date>, nearest date to <user_date>, 5 dates after <user_date> * \
+* *get last 5 dates or 5 dates before <user_date>, nearest date to <user_date>, 5 dates after <user_date>* \
 GET /api/v1/dates/
 
-* get books by categories by user_date (2021-08-08) * \
+* *get books by categories by user_date (2021-08-08)*  \
 GET /api/v1/listbydate/?date=${dateText}
 
-* get rubrics with book's count * \
+* *get rubrics with book's count*  \
 GET /api/v1/rubrics
 
-* get books by rubric's id *\
+* *get books by rubric's id* \
 GET /api/v1/rubrics/<int:id>/
 
-* get service info and books of rubric <id> with navigation info (books per page = <user_size> or 10)!!!! * \
+* *get service info and books of rubric <id> with navigation info (books per page = <user_size> or 10)!!!!* \
 http://127.0.0.1:8000/api/v1/rubrics/1/?size=<user_size>&page=3
 
-* searching (return array or empty) * \
+* *searching (return array or empty)* \
 http://127.0.0.1:8000/api/v1/search/?title=vascript&year_min=2019
