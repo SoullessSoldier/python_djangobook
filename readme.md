@@ -20,23 +20,25 @@
 
 
 RUN PROJECT:
-0) In django shell you should generate and put to settings.py new SECRET_KEY:
+
+0) In django shell you should generate and put to settings.py new SECRET_KEY: \
 *from django.core.management.utils import get_random_secret_key*  \
 *print(get_random_secret_key())*
 
-1) AAA@DESKTOP-D61SGAA MINGW64 /c/coding/python/DjangoSchool-drf/django_book
-$ source c:/coding/python/DjangoSchool-drf/venv/Scripts/activate
+1) In project root dir: \
+$ source /venv/Scripts/activate
 
-2) AAA@DESKTOP-D61SGAA MINGW64 /c/coding/python/DjangoSchool-drf
+2) In project root dir: \
 $ cd django_book/
 (venv)
 
-3) AAA@DESKTOP-D61SGAA MINGW64 /c/coding/python/DjangoSchool-drf/django_book
+3) In project dir: \/django_book \
 $ python manage.py runserver
 
-4) start from FAR  c:/coding/python/DjangoSchool-drf/django_book/nginx
+4) run \
+start /django_book/nginx
 
-5) browser 127.0.0.1
+5) Run browser and navigate to 127.0.0.1
 
 ---
 
