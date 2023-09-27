@@ -60,7 +60,7 @@ GET /api/v1/rubrics
 GET /api/v1/rubrics/<int:id>/
 
 * *get service info and books of rubric <id> with navigation info (books per page = <user_size> or 10)!!!!* \
-http://127.0.0.1:8000/api/v1/rubrics/1/?size=<user_size>&page=3
+GET /api/v1/rubrics/1/?size=<user_size>&page=3
 
 * *searching (return array or empty)* \
-http://127.0.0.1:8000/api/v1/search/?title=vascript&year_min=2019
+GET /api/v1/search/?title=vascript&year_min=2019
