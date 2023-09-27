@@ -1,0 +1,7 @@
+INSERT INTO books (id, title, author, link, category, creator, pubdate, date, cover_url, cover, format, size, quality, language, genre, year, downloaded, file, description, rating_plain, turboContentRaw, rubrics_id, favorites, source_site, pages)
+SELECT id, title, author, link, category, creator, pubdate, date, cover_url, cover, format, size, quality, language, genre, year, downloaded, file, description, rating_plain, turboContentRaw, rubrics_id, favorites, source_site, pages
+FROM _books_old
+
+
+/*select distinct rubrics_id, rubric from books inner join rubrics on rubrics.id=books.rubrics_id where date in (select max(date) from books)*/ 
+select distinct rubrics_id, rubric from books inner join rubrics on rubrics.id=books.rubrics_id where date = "2021-08-02"

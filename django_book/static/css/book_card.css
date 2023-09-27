@@ -1,0 +1,33 @@
+.books__card{            
+    padding: 5px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    flex-basis: 280px;            
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.10);
+    box-shadow: 5px 5px 5px 0px rgba(0, 0, 0, 0.50);
+    outline: 2px solid black;
+    border-radius: 2px;
+    font-size: 14px;
+    text-align: start;
+    cursor: pointer;
+}
+.card__list{
+    list-style: none;
+    width: 100%;            
+}
+.card__list li{
+    display: block;
+}
+.card__img{
+    width: 150px;
+    height: 210px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    /*outline: 1px solid black;*/
+}
+.card__list-title{
+    font-weight: bolder;
+}

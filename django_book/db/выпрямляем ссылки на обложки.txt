@@ -1,0 +1,1 @@
+update books set cover = 'kodges_covers\'||cover where substr(cover,1,6)<>'kodges'

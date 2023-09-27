@@ -1,0 +1,510 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" type="text/css" href="{% static "/css/accordion_aspect.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "/css/book_card.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "/css/search_block.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "/css/main.css" %}">
+</head>
+<body>
+    <div class="container">
+        <header class="header" id="header">
+            <a class="logo" href="/" title="Main page">
+                <div class="logo__block">    
+                    <img src="{% static "img/logo.png" %}"" alt="image: logo" class="logo__img">
+                    <div class="logo__text">
+                        <span class="logo__title">Мой сайт</span>
+                    </div>
+                </div>
+            </a>
+            <div class="search-block">
+                <form action="" class="search-bar">
+                    <input type="search" name="search" required>
+                    <button class="search-btn" type="submit">
+                        <span>Search</span>
+                    </button>
+                </form>
+            </div>
+        </header>
+        <main class="main">
+            <aside class="aside">
+                <div class="feature-wrapper">
+                    <div class="feature-block">
+                        <span class="section__title feature__title">Просмотр по:</span>
+                        <ul class="feature-list">
+                            <li class="feature__item">
+                                <button class="feature__link feature__link_active">
+                                    <span class="feature-item-wrap">
+                                        <span class="feature-item__title">
+                                            категории
+                                        </span>
+                                    </span>
+                                </button>
+                                <ul class="category__list"></ul>
+                            </li>
+                            <li class="feature__item">
+                                <button class="feature__link">
+                                    <span class="feature-item-wrap">
+                                        <span class="feature-item__title">
+                                            даты загрузки
+                                        </span>
+                                    </span>
+                                </button>
+                                <ul class="dates__list hidden"></ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+            </aside>
+            <div id="app" class="app"></div>
+        </main>
+        <footer class="footer"></footer>
+    </div>
+    <script src="{% static "/js/accordion.js" %}"></script>
+    <script>
+        const formSearchBar = document.querySelector('.search-bar'),
+            inputSearch = formSearchBar.querySelector('input[name="search"]');
+
+        const validateSearchInput = (element) => {
+            let excludePattern = /[\=\*\<\>\'\"\(\)\[\]\\]/i;
+            element.target.value = element.target.value.replace(excludePattern, '');
+        };
+
+        inputSearch.addEventListener('input', validateSearchInput);
+        formSearchBar.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let userSearch = inputSearch.value;
+            if (userSearch !== ''){
+                let url = `/api/v1/search/?title=${userSearch}`;
+                fetch(url)
+                .then(response => response.json())
+                .catch(error => console.warn('Error fetching user\'s search!', error))
+                .then(data => renderCategoryData(data, type = 'search', baseUrl = url));
+                //.then(data => console.log(data));
+            }
+            else console.warn('Search input is empty!');
+            inputSearch.value = '';        
+        });
+    </script>
+    <script>
+        //some games with prototypes
+        String.prototype.trunc = function(n, useWordBoundary) {
+            if (this.length > 0) {
+                let isTooLong = this.length > n,
+                    s_ = isTooLong ? this.substr(0, n - 1) : this;
+                s_ = (useWordBoundary && isTooLong) ? s_.substr(0, s_.lastIndexOf(' ')) : s_;
+                return isTooLong ? s_ + '&hellip;' : s_;
+            } else {
+                return '';
+            }        
+        };
+
+        Array.prototype.first = function() {
+            return this[0];
+        };
+
+        Array.prototype.last = function() {
+            return this[this.length-1];
+        };
+        //----./end prototypes
+        //----utilities
+        const dynamicSort = (property) => {
+            let sortOrder = 1;
+            if(property[0] === "-") {
+                sortOrder = -1;
+                property = property.substr(1);
+            }
+            return function (a,b) {
+            let result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+            return result * sortOrder;
+            }
+        };
+
+        const createArray = (n) => {
+            let array = [...Array(n)].map((item, index) => index+1);
+            return array;
+        };
+
+        const splitArray = (array, interval) => {
+            let result = [];
+            while(array.length > 0){
+                result.push(array.splice(0,interval));
+            }
+            return result;
+        };
+        const safeJsonParse = (str) => {
+            try {
+                return [null, JSON.parse(JSON.stringify(str))];
+            } catch (err) {
+                return [err];
+            }
+        }
+        //---./utilities
+        //---globals
+        const pagesPerLink = 10;
+        const app = document.getElementById('app');
+        let urlRubrics = '/api/v1/rubrics/',
+            urlDates = '/api/v1/dates/',
+            current_date = '';
+        //---./globals
+        /* example
+        let result = splitArray(array, interval);
+        for (let item of result){
+            if (item.includes(booksObj.current_page)) {
+                console.log(...item);
+            } else {
+            console.log(`${item.first()} - ${item.last()}`);
+            }
+        }
+        */
+        //--- functions
+        const renderCategoryItems = (data) => {
+            const parentElement = document.querySelector('.category__list'); 
+            //data_sorted = data.sort((a, b) => a.books > b.books && -1 || 1);
+            data_sorted = data.sort(dynamicSort("-books"));
+            for (let item of data_sorted){
+                let element = `
+                    <li>
+                        <button class='category-btn' data-category-id=${item.id}>
+                            <span class='category-title'>${item.rubric}</span>
+                            <span class='category-count'>${item.books}</span>
+                        </button>
+                    </li>
+                `;
+                parentElement.insertAdjacentHTML('beforeend', element);
+            } 
+        };
+
+        const renderDateItems = (data) => {
+            let safeData = safeJsonParse(data);            
+            if (!safeData[0]) {
+                const parentElement = document.querySelector('.dates__list');
+                parentElement.textContent = '';
+                for (let item of data){
+                let element = `
+                    <li>
+                        <button class='date__btn' data-date-text=${item.date}>
+                            <span class='date__title'>${item.date}</span>
+                        </button>
+                    </li>
+                `;
+                parentElement.insertAdjacentHTML('beforeend', element);
+            }
+            }
+        };
+        
+        const renderBookCard = (divWrapper, arrayItems) =>{
+            for (book of arrayItems){
+                let booksCard = document.createElement('div');
+                booksCard.classList.add('books__card');
+                let bookCover = book.cover.replace(/[\\]/g,'\/');
+                let bookTitle = book.title;
+                let bookTitleTag = book.title.length > 50 ? 
+                    `<span class='card__list-text' data-tooltip='${bookTitle}'>${bookTitle.trunc(50, true)}</span>`: 
+                    `<span class='card__list-text'>${bookTitle}</span>`;
+                let bookAuthor = book.author;
+                let bookPublishedDate = book.date;
+                let card = `
+                <div class="card__img" style="background-image: url(/media/${bookCover})"></div>
+                <ul class='card__list'>                            
+                    <li class='card__list-string'>
+                        <span class='card__list-title'>Название:</span><br>
+                        ${bookTitleTag}
+                    </li>
+                    <li class='card__list-string'>
+                        <span class='card__list-title'>Автор:</span>
+                        <span class='card__list-text'>${bookAuthor}</span>
+                    </li>
+                    <li class='card__list-string'>
+                        <span class='card__list-title'>Дата публикации:</span>
+                        <span class='card__list-text'>${bookPublishedDate}</span>
+                    </li>
+                </ul>
+                `;
+                booksCard.insertAdjacentHTML('beforeend', card);
+                divWrapper.append(booksCard);
+            }
+        };
+
+        const init = () => {
+            fetch(urlRubrics)
+            .then(response => response.json())
+            .catch(error => console.warn('Error fetching categories!', error))
+            .then(data => renderCategoryItems(data));
+
+            fetch(urlDates)
+            .then(response => response.json())
+            .catch(error => console.warn('Error fetching dates!', error))
+            //.then(data => console.log(data));
+            .then(data => renderDateItems(data));
+        }            
+        // --- ./functions
+
+        /*Handling click on categories*/
+
+        const categoryList = document.querySelector('.category__list');
+        const datesList = document.querySelector('.dates__list');
+        
+        const loadCategoryData = ({categoryId, baseUrl, page}) => {
+            //console.log(categoryId, baseUrl, page);
+            let url = '';
+            if (baseUrl) {
+                let newUrl = new URL(baseUrl);
+                newUrl.searchParams.set('page', page);
+                //window.location(newUrl.toString());
+                //return false;
+                url = newUrl.toString();
+            } else {
+                url = page ? '/api/v1/rubrics/' + categoryId + '/?page=' + page : '/api/v1/rubrics/' + categoryId + '/';                
+            }                
+                
+            let pagePattern = /^(\S+)(?:\?page=[\d]+)/mg;
+            let urlPath = url.match(pagePattern);
+            //console.log(url);
+            fetch(url)
+            .then(response => response.json())
+            .catch(error => console.warn('Error fetching categories!', error))
+            .then(data => renderCategoryData(data, null, url = baseUrl));
+        };
+
+        //main render function!!!!
+        const renderCategoryData = (data, type = null, baseUrl = null) => {
+            //console.log(data);
+            let url = '';
+            /*if(baseUrl) {
+                url = baseUrl;
+            } else {
+                if (type === 'search') {
+                    //lets make some Url
+                    if(!data.books.next_url){
+                        let newUrl = new URL('#header', window.location);
+                        url = newUrl.toString();
+                    } else {
+                        let _url = new URL(data.books.next_url);
+                        let paramString = _url.searchParams;
+                        let searchParams = new URLSearchParams(paramString);                    
+                        let newUrl = new URL(_url.pathname, _url.origin);                    
+                        newUrl.searchParams.append('title', searchParams.get('title'));
+                        url = newUrl.toString();
+                    }
+                }
+            }*/
+            //console.log(url);            
+            let safeData = safeJsonParse(data);            
+            if (!safeData[0]) {
+                let data = safeData[1], 
+                    rubricsId = data.id,
+                    rubricsTitle = data.rubric,
+                    booksDataObj = data.books,
+                    booksItems = booksDataObj.data,
+                    booksNavCounterPages = booksDataObj.pages,
+                    booksNavCurrentPage = booksDataObj.current_page;
+                
+                if(data.full_path){
+                    let newUrl = new URL(data.full_path);
+                    newUrl.searchParams.delete('page');
+                    url = newUrl.toString();
+                    //console.log(url);
+                }
+
+                app.textContent='';
+                let headerTitle = document.createElement('h2');
+                headerTitle.classList.add('rubric__title');
+                headerTitle.textContent = rubricsTitle;
+                app.append(headerTitle);
+                let dataWrapper = document.createElement('div');
+                dataWrapper.classList.add('data__wrapper');
+                app.append(dataWrapper);
+                if(booksItems.length > 0) {
+                    
+                    renderBookCard(dataWrapper,booksItems);
+                    // Добавляем блок навигации
+                    let navWrapper = document.createElement('div');
+                    navWrapper.classList.add('nav__wrapper');
+                    app.append(navWrapper);
+                    let arrayLinks = createArray(booksNavCounterPages);
+                    let arraySplittedLinks = splitArray(arrayLinks, pagesPerLink);
+                    for (let item of arraySplittedLinks) {
+                        let navItem = document.createElement('div');
+                        if (item.includes(booksNavCurrentPage)) {
+                            navItem.classList.add('nav__item-array');
+                            [...item].forEach(element => {                                
+                                let navLink = document.createElement('span');
+                                navLink.classList.add('nav__link');
+                                if(element===booksNavCurrentPage) navLink.classList.add('nav__link-current');
+                                navLink.dataset.rubric=rubricsId;
+                                navLink.dataset.page=element;
+                                navLink.textContent=`${element}`;
+                                navItem.append(navLink);
+                            });
+
+                        } else {
+                            navItem.classList.add('nav__item-group');
+                            let navLink = document.createElement('span');
+                            navLink.classList.add('nav__link');
+                            navLink.dataset.rubric=rubricsId;
+                            navLink.dataset.page=item.first();
+                            navLink.textContent=`${item.first()} - ${item.last()}`;
+                            navItem.append(navLink);
+                        }
+                        
+                        navWrapper.append(navItem);
+                    }
+                    const navLinkItems = document.querySelectorAll('.nav__link');
+                    navLinkItems.forEach((element, index, array) => 
+                        {
+                            if (array.length > 1){ 
+                                element.addEventListener('click', (e) => {
+                                    let target = e.target;
+                                    //console.log(`we are on click nav with baseUrl: ${baseUrl}`);
+                                    let linkObj = (type === 'search' || url) ? 
+                                    { categoryId: null, baseUrl: url, page: target.dataset.page}
+                                    : { categoryId: target.dataset.rubric, baseUrl: null, page: target.dataset.page};
+                                    loadCategoryData(linkObj);
+                                })
+                            }
+                        }
+                    );
+                    
+                }                  
+
+            }
+            else console.warn(safeData[0]);
+        };
+
+        
+        /*Handling click on dates*/
+        const renderBooksByRubricsAndDate = (data) => {
+            //console.log(data);
+            let safeData = safeJsonParse(data);            
+            if (!safeData[0]) {
+                let data = safeData[1];
+                //console.log(data); 
+                app.textContent = '';
+                // Next try
+                //< id="aspect-content">
+                let divAspectContentMain = document.createElement('div');
+                divAspectContentMain.id = 'aspect-content';
+                app.append(divAspectContentMain);
+                for (let [index, item] of data.entries()) {
+                    let rubricTitle = item.rubric;
+                    let rubricBooksCount = item.books.length;
+                    let divAspectTab = document.createElement('div');
+                    divAspectTab.classList.add('aspect-tab');
+                    //input
+                    let inputAspect = document.createElement('input');
+                    inputAspect.id = `item-${index}`;
+                    inputAspect.type='checkbox';
+                    inputAspect.classList.add('aspect-input');
+                    divAspectTab.append(inputAspect);
+                    //label
+                    let labelAspect = document.createElement('label');
+                    labelAspect.setAttribute('for',`item-${index}`);
+                    labelAspect.classList.add('aspect-label');
+                    divAspectTab.append(labelAspect);                    
+                    //aspect-content
+                    let divAspectContent = document.createElement('div');
+                    divAspectContent.classList.add('aspect-content');
+                    //aspect-info
+                    let divAspectInfo = document.createElement('div');
+                    divAspectInfo.classList.add('aspect-info');
+                        let divChartPie = document.createElement('div');
+                        divChartPie.classList.add('chart-pie');
+                        let spanChartPieCount = `<span class="chart-pie-count">${rubricBooksCount}</span>`;
+                        divChartPie.insertAdjacentHTML('beforeend', spanChartPieCount);
+                        divAspectInfo.append(divChartPie);
+                        let spanAspectName = `<span class="aspect-name">${rubricTitle}</span>`;
+                        divAspectInfo.insertAdjacentHTML('beforeend', spanAspectName);
+                    divAspectContent.append(divAspectInfo);
+                    //--./aspect-info
+                    divAspectTab.append(divAspectContent);
+                    //--./aspect-content
+                    //--aspect-tab-content
+                    let divAspectTabContent = document.createElement('div');
+                    divAspectTabContent.classList.add('aspect-tab-content');
+                    //--sentiment-wrapper
+                    let divSentimentWrapper = document.createElement('div');
+                    divSentimentWrapper.classList.add('sentiment-wrapper');
+                    renderBookCard(divSentimentWrapper, item.books);
+                    divAspectTabContent.append(divSentimentWrapper);
+                    //--./sentiment-wrapper
+                    divAspectTab.append(divAspectTabContent);
+                    //--./aspect-tab-content
+                    divAspectContentMain.append(divAspectTab);
+                }
+                    
+                
+                
+
+                const booksCategoryLinkElems = document.querySelectorAll('.books-category__link');
+                booksCategoryLinkElems.forEach(elem=>{
+                    elem.addEventListener('click', ()=>{
+                        if (elem.classList.contains('books-category__link_active')) {
+                            elem.classList.toggle('books-category__link_active');
+                            elem.nextElementSibling.classList.toggle('hidden');
+                        } else {
+                            booksCategoryLinkElems.forEach(el=>{
+                                el.classList.remove('books-category__link_active');
+                                el.nextElementSibling.classList.add('hidden');
+                            });
+                            elem.classList.toggle('books-category__link_active');
+                            elem.nextElementSibling.classList.toggle('hidden');
+                        }            
+                    });
+                });
+
+                
+            }
+            else console.warn(safeData[0]);
+        };
+
+
+        const loadBooksByRubricsAndDate = (dateText) => {
+            let url = dateText ? `/api/v1/listbydate/?date=${dateText}` : `/api/v1/listbydate/`;
+            fetch(url)
+            .then(response => response.json())
+            .catch(error => console.warn('Error fetching books by date!', error))
+            .then(data => renderBooksByRubricsAndDate(data));
+            //.then(data => console.log(data));
+
+            let urlDates = `/api/v1/dates/?date=${dateText}`;
+            fetch(urlDates)
+            .then(response => response.json())
+            .catch(error => console.warn('Error fetching dates list!', error))
+            //.then(data => console.log(data));
+            .then(data => renderDateItems(data));
+        }
+        //--./Handling click on dates
+
+
+        categoryList.addEventListener('click', (event) => {
+            const target = event.target.closest('.category-btn');
+            if (target){
+                loadCategoryData({categoryId: target.dataset.categoryId});
+            } 
+        });
+
+        datesList.addEventListener('click', (event) => {
+            const target = event.target.closest('.date__btn');
+            if (target){
+                current_date = target.dataset.dateText;
+                loadBooksByRubricsAndDate(target.dataset.dateText);
+            } 
+        });
+        
+        // Initialization 
+
+        init();
+    </script>
+</body>
+</html>
