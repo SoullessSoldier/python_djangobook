@@ -1,4 +1,4 @@
-## **Это бьло так наивно и смешно...**
+## **Это было так наивно и смешно...**
 *Разработка пришлась на период, когда еще был интерес к Django/DRF\
 и начинался интерес к фронту на JS, к CSS, с параллельной попыткой посмотреть, что такое nginx.\
 Очень много недоделок, наивный ванильный фронтенд.\
@@ -40,8 +40,8 @@ $ python manage.py runserver
 
 ---
 
-filtering
-GET /api/v1/first5/?year_min=2019&year_max=2021
+* filtering  \
+GET /api/v1/first5/?year_min=2019&year_max=2021 \
 GET /api/v1/first5/?rubrics=%D0%90%D1%83%D0%B4&title=&year_min=&year_max=
 
 ////
